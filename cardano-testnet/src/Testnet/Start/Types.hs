@@ -39,10 +39,12 @@ data CardanoTestnetOptions = CardanoTestnetOptions
     -- created.
     cardanoNodes :: [TestnetNodeOptions]
   , cardanoNodeEra :: AnyCardanoEra -- ^ The era to start at
+  , cardanoProtocolVersion :: Int
   , cardanoEpochLength :: Int -- ^ An epoch's duration, in number of slots
   , cardanoSlotLength :: Double -- ^ Slot length, in seconds
   , cardanoTestnetMagic :: Int
   , cardanoActiveSlotsCoeff :: Double
+  , cardanoSecurityParam :: Int
   , cardanoMaxSupply :: Word64 -- ^ The amount of ADA you are starting your testnet with (forwarded to shelley genesis)
   , cardanoEnableP2P :: Bool
   , cardanoNodeLoggingFormat :: NodeLoggingFormat
@@ -54,10 +56,12 @@ cardanoDefaultTestnetOptions :: CardanoTestnetOptions
 cardanoDefaultTestnetOptions = CardanoTestnetOptions
   { cardanoNodes = cardanoDefaultTestnetNodeOptions
   , cardanoNodeEra = AnyCardanoEra BabbageEra
+  , cardanoProtocolVersion = 8
   , cardanoEpochLength = 500
   , cardanoSlotLength = 0.1
   , cardanoTestnetMagic = 42
-  , cardanoActiveSlotsCoeff = 0.05
+  , cardanoActiveSlotsCoeff = 1.0e-1
+  , cardanoSecurityParam = 10
   , cardanoMaxSupply = 100_020_000_000 -- 100 billions. This amount should be bigger than the 'byronTotalBalance' in Testnet.Start.Byron
   , cardanoEnableP2P = False
   , cardanoNodeLoggingFormat = NodeLoggingFormatAsJson

@@ -2,6 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 module Testnet.Start.Cardano
   ( ForkPoint(..)
@@ -20,7 +21,8 @@ module Testnet.Start.Cardano
   , requestAvailablePortNumbers
   ) where
 
-
+import           Control.Concurrent (threadDelay)
+import qualified Control.Exception as IO
 import           Cardano.Api
 import           Cardano.Api.Ledger (StandardCrypto)
 
@@ -33,6 +35,7 @@ import           Prelude hiding (lines)
 import           Control.Monad
 import           Data.Aeson
 import qualified Data.Aeson as Aeson
+import           Data.Functor (($>))
 import           Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Either
@@ -47,6 +50,7 @@ import           Data.Word (Word32)
 import           GHC.IO.Unsafe (unsafePerformIO)
 import           GHC.Stack
 import qualified GHC.Stack as GHC
+import qualified Network.Socket as IO
 import           Network.Socket (PortNumber)
 import           System.FilePath ((</>))
 import qualified System.Info as OS
@@ -67,6 +71,7 @@ import           Hedgehog (MonadTest)
 import qualified Hedgehog as H
 import qualified Hedgehog.Extras as H
 import qualified Hedgehog.Extras.Stock.OS as OS
+import Hedgehog.Extras.Stock (allocateRandomPorts)
 
 -- | There are certain conditions that need to be met in order to run
 -- a valid node cluster.
@@ -83,6 +88,36 @@ data ForkPoint
   | AtEpoch Int
   deriving (Show, Eq, Read)
 
+
+isPortOpen :: Int -> IO Bool
+isPortOpen port = do
+  socketAddressInfos <- IO.getAddrInfo Nothing (Just "127.0.0.1") (Just (show port))
+  case socketAddressInfos of
+    socketAddressInfo : _ -> canConnect (IO.addrAddress socketAddressInfo) $> True
+    [] -> return False
+
+{- | Check if it is possible to connect to a socket address
+ TODO: upstream fix to Hedgehog Extras
+-}
+canConnect :: IO.SockAddr -> IO Bool
+canConnect sockAddr = IO.bracket (IO.socket IO.AF_INET IO.Stream 6) IO.close' $ \sock -> do
+  res <- IO.try $ IO.connect sock sockAddr
+  case res of
+    Left (_ :: IO.IOException) -> return False
+    Right _ -> return True
+
+-- | Get random list of open ports. Timeout after 60seconds if unsuccessful.
+getOpenPorts :: (MonadTest m, MonadIO m) => Int -> Int -> m [Int]
+getOpenPorts n numberOfPorts = do
+  when (n == 0) $ do
+    error "getOpenPorts timeout"
+  ports <- liftIO $ allocateRandomPorts numberOfPorts
+  allOpen <- liftIO $ mapM isPortOpen ports
+  unless (and allOpen) $ do
+    H.annotate "Some ports are not open, trying again..."
+    liftIO $ threadDelay 1_000_000 -- wait 1 sec
+    void $ getOpenPorts (pred n) numberOfPorts
+  pure ports
 
 -- | For an unknown reason, CLI commands are a lot slower on Windows than on Linux and
 -- MacOS.  We need to allow a lot more time to set up a testnet.
