@@ -8,6 +8,7 @@ Usage: cardano-testnet cardano [--num-pool-nodes COUNT]
   | --alonzo-era
   | --babbage-era
   ]
+  [--protocol-version INT]
   [--epoch-length SLOTS]
   [--slot-length SECONDS]
   --testnet-magic INT
@@ -27,4 +28,3 @@ Usage: cardano-testnet version
 Usage: cardano-testnet help 
 
   Show cardano-testnet help
-

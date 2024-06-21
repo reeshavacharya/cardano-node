@@ -6,6 +6,7 @@ Usage: cardano-testnet cardano [--num-pool-nodes COUNT]
   | --alonzo-era
   | --babbage-era
   ]
+  [--protocol-version INT]
   [--epoch-length SLOTS]
   [--slot-length SECONDS]
   --testnet-magic INT
@@ -28,6 +29,7 @@ Available options:
   --mary-era               Specify the Mary era
   --alonzo-era             Specify the Alonzo era
   --babbage-era            Specify the Babbage era (default)
+  --protocol-version INT   Protocol version (default: 8)
   --epoch-length SLOTS     Epoch length, in number of slots (default: 500)
   --slot-length SECONDS    Slot length (default: 0.1)
   --testnet-magic INT      Specify a testnet magic id.
